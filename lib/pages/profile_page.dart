@@ -1,140 +1,313 @@
-import 'dart:html';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:project/components/text_box.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({Key? key}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  //for linkage the firebase with user email and show under user icon
-  final currentUser = FirebaseAuth.instance.currentUser!;
-  //reference for all users we create
-  final usersCollection = FirebaseFirestore.instance.collection('Users');
+  File? _image;
+  TextEditingController _postController = TextEditingController();
 
-//edit field(when press on the setting icon what happen)
+  final currentUser = FirebaseAuth.instance.currentUser!;
+  final usersCollection = FirebaseFirestore.instance.collection('Users');
+  final postsCollection = FirebaseFirestore.instance.collection('Posts');
+
   Future<void> editField(String field) async {
     String newValue = "";
     await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              backgroundColor: Colors.grey[900],
-              title: Text(
-                "Edit " + field,
-                style: const TextStyle(color: Colors.white),
-              ),
-              content: TextField(
-                autofocus: true,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Enter new $field",
-                  hintStyle: TextStyle(color: Colors.grey),
-                ),
-onChanged: (value){
-newValue=value;
-                },
-              ),
-              actions: [
-//cancel button
-TextButton(onPressed:()=>Navigator.pop(context) , child: Text('Cancel',style: TextStyle(color:Colors.white),)),
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          "Edit " + field,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: TextField(
+          autofocus: true,
+          style: TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: "Enter new $field",
+            hintStyle: TextStyle(color: Colors.grey),
+          ),
+          onChanged: (value) {
+            newValue = value;
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (newValue.trim().length > 0) {
+                await usersCollection
+                    .doc(currentUser.email)
+                    .update({field: newValue});
+                Navigator.pop(context);
+              }
+            },
+            child: Text(
+              'Save',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-//save button
-TextButton(onPressed:()=>Navigator.of(context).pop(newValue) , child: Text('Save',style: TextStyle(color:Colors.white),)),
-          ],  ));
+  Future<void> _getImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
 
-          //update in firebase
-if(newValue.trim().length>0){
-//only update if there is something in the textfield
-await usersCollection.doc(currentUser.email).update({field: newValue});
-}
+    setState(() {
+      if (pickedImage != null) {
+        _image = File(pickedImage.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+
+  Future<void> _post() async {
+    if (_postController.text.isNotEmpty || _image != null) {
+      final imageURL = await uploadImageToFirebase();
+      await postsCollection.add({
+        'text': _postController.text,
+        'imageURL': imageURL,
+        'userId': currentUser.uid,
+        'timestamp': DateTime.now(),
+      });
+      setState(() {
+        _postController.clear();
+        _image = null;
+      });
+    }
+  }
+
+  Future<String?> uploadImageToFirebase() async {
+    if (_image != null) {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('posts_images')
+          .child('${DateTime.now()}.jpg');
+      await ref.putFile(_image!);
+      return ref.getDownloadURL();
+    }
+    return null;
+  }
+
+  Future<void> deletePost(String postId) async {
+    // Delete post document from Firestore
+    await postsCollection.doc(postId).delete();
+
+    // If the post has an associated image, delete it from Firebase Storage
+    final post = await postsCollection.doc(postId).get();
+    if (post.exists) {
+      final imageURL = post['imageURL'];
+      if (imageURL != null) {
+        await FirebaseStorage.instance.refFromURL(imageURL).delete();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-backgroundColor: Theme.of(context).colorScheme.background,//DARKMODE
-        appBar: AppBar(
-          title: Text(
-            'Profile Page',
-            style: TextStyle(color: Colors.white),
-          ),
-
+      backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: AppBar(
+        title: Text(
+          'Profile Page',
+          style: TextStyle(color: Colors.grey[500]),
         ),
-        body: StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance.collection('Users').doc(currentUser.email).snapshots(),
-            builder: (context , snapshot){
-            //get user data
-if(snapshot.hasData){
-final userData = snapshot.data!.data() as Map<String,dynamic>;
+        backgroundColor: Colors.transparent,
+      ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('Users')
+            .doc(currentUser.email)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final userData = snapshot.data!.data() as Map<String, dynamic>;
 
-           return ListView(
-          children: [
-            const SizedBox(
-              height: 50,
-            ),
-//profile pic
-            const Icon(
-              Icons.person,
-              size: 72,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-//user email
-            Text(
-              currentUser.email!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[700]),
-            ),
-            const SizedBox(
-              height: 50,
-            ),
-//user details
-            Padding(
-              padding: const EdgeInsets.only(left: 25.0),
-              child: Text(
-                'My Details',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
+            return ListView(
+              children: [
+                const SizedBox(
+                  height: 50,
+                ),
+                const Icon(
+                  Icons.person,
+                  size: 72,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  currentUser.email!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                const SizedBox(
+                  height: 50,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 25.0),
+                  child: Text(
+                    'My Details',
+                    style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                MyTextBox(
+                  text: userData['username'],
+                  sectionName: 'username',
+                  onPressed: () => editField('username'),
+                ),
+                MyTextBox(
+                  text: userData['bio'],
+                  sectionName: 'bio',
+                  onPressed: () => editField('bio'),
+                ),
+                const SizedBox(
+                  height: 50,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 25.0),
+                  child: Text(
+                    'My Posts',
+                    style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _image != null
+                        ? Image.file(_image!, width: 100, height: 100)
+                        : SizedBox(),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        controller: _postController,
+                        decoration: InputDecoration(
+                          hintText: 'Write your post here...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          onPressed: _getImage,
+                          icon: Icon(Icons.image),
+                          color: Colors.grey,
+                        ),
+                        IconButton(
+                          onPressed: _post,
+                          icon: Icon(Icons.add),
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: postsCollection
+                          .where('userId', isEqualTo: currentUser.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final posts = snapshot.data!.docs;
+                          return Column(
+                            children: posts.map((post) {
+                              final postText = post['text'];
+                              final imageURL = post['imageURL'];
+                              final postId = post.id; // Document ID
 
-//username
-            MyTextBox(
-              text: userData['username'],
-              sectionName: 'username',
-              onPressed: () => editField('username'),
-            ),
-//bio
-            MyTextBox(
-              text: userData['bio'],
-              sectionName: 'bio',
-              onPressed: () => editField('bio'),
-            ),
-            const SizedBox(
-              height: 50,
-            ),
-//user posts
-            Padding(
-              padding: const EdgeInsets.only(left: 25.0),
-              child: Text(
-                'My Posts',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
-          ],
-           );
-
-}else if(snapshot.hasError){
-return Center(child: Text('Error${snapshot.error}'),);
+                              return Column(
+                                children: [
+                                  if (postText != null)
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(postText),
+                                    ),
+                                  if (imageURL != null)
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Image.network(
+                                        imageURL,
+                                        width: 100,
+                                        height: 100,
+                                      ),
+                                    ),
+                                  IconButton(
+                                    onPressed: () => deletePost(postId),
+                                    icon: Icon(Icons.delete),
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                         
+                          );
+                        }
+                        return SizedBox();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error${snapshot.error}'));
+          }
+          return const Center(child: CircularProgressIndicator());
+        },
+      ),
+    );
   }
-return const Center(child: CircularProgressIndicator() );
-}),
+}
+
+class MyTextBox extends StatelessWidget {
+  final String text;
+  final String sectionName;
+  final Function onPressed;
+
+  const MyTextBox({
+    required this.text,
+    required this.sectionName,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(
+        text,
+        style: TextStyle(color: Colors.grey[700]),
+      ),
+      trailing: IconButton(
+        onPressed: () => onPressed(),
+        icon: Icon(Icons.edit),
+        color: Colors.grey,
+      ),
     );
   }
 }

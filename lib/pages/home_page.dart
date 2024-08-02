@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:project/components/drawer.dart';
 import 'package:project/components/text_field.dart';
 import 'package:project/components/unityloop_post.dart';
+import 'package:project/helper/helper_method.dart';
 import 'package:project/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -53,15 +54,16 @@ Navigator.push(context, MaterialPageRoute(builder: (context)=>const ProfilePage(
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Theme.of(context).colorScheme.background,
+      backgroundColor:Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "UnityLoop",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.grey[500],
           ),
         ),
+        backgroundColor: Colors.transparent,
 
       ),
       drawer:MyDrawer(
@@ -88,13 +90,14 @@ Navigator.push(context, MaterialPageRoute(builder: (context)=>const ProfilePage(
                     return ListView.builder(
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
-//get the message
+                       //get the message from firebase
                         final post = snapshot.data!.docs[index];
                         return UnityloopPost(
                           message: post['Message'],
                           user: post['UserEmail'],
                           postId: post.id,
                           likes: List<String>.from(post['Likes'] ?? [] ),//retrieving it from firebase//if null ??
+                          time: formatDate(post['TimeStamp']),
                         );
                       },
                     );

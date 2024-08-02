@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:project/auth/auth.dart';
-//import 'package:project/auth/login_or_register.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:project/theme/dark_theme.dart';
-import 'package:project/theme/light_theme.dart';
+import 'package:project/theme/theme_provider.dart';
 import'firebase_options.dart';
+import 'package:provider/provider.dart';
+
 
 void main() async{//for initializing the firebase
 WidgetsFlutterBinding.ensureInitialized();
 await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider(create: (context)=>ThemeProvider()),
+ ],
+ child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -22,10 +26,11 @@ class MyApp extends StatelessWidget {
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      darkTheme: darkTheme,
+      
 
       home: const AuthPage(),
+     theme : Provider.of<ThemeProvider>(context).themeData,
+
     );
   }
 }

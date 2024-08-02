@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-ThemeData lightTheme = new ThemeData(
+ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
   appBarTheme:const AppBarTheme(
 backgroundColor:Colors.transparent,
