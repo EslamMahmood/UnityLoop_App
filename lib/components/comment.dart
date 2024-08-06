@@ -18,6 +18,7 @@ class Comment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -55,15 +56,17 @@ class Comment extends StatelessWidget {
             ],
           ),
           
-          Padding(
-            padding: const EdgeInsets.only(left: 570),
-            child: IconButton(
-              icon: Icon(CupertinoIcons.delete_solid,color: Colors.grey[400],),
-              onPressed: onDelete,
-            ),
-            
+         Padding(
+          padding: EdgeInsets.only(left: screenWidth*0.05), // Adjust the multiplier as needed
+          child: IconButton(
+            icon: Icon(CupertinoIcons.delete_solid, color: Colors.grey[400]),
+            onPressed: onDelete,
           ),
-          IconButton(onPressed: onEdit, icon: Icon(Icons.settings_outlined,color: Colors.grey[400],)),
+        ),
+        IconButton(
+          onPressed: onEdit,
+          icon: Icon(Icons.settings_outlined, color: Colors.grey[400]),
+        ),
         ],
       ),
     );

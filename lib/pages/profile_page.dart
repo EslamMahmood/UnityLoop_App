@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import '../components/text_field.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
@@ -163,6 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(
                   height: 50,
                 ),
+                Padding(padding: EdgeInsets.all(25.0),child: Divider(),),
                 Padding(
                   padding: const EdgeInsets.only(left: 25.0),
                   child: Text(
@@ -173,6 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         fontWeight: FontWeight.bold),
                   ),
                 ),
+                const SizedBox(height: 20,),
                 MyTextBox(
                   text: userData['username'],
                   sectionName: 'username',
@@ -184,8 +188,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () => editField('bio'),
                 ),
                 const SizedBox(
-                  height: 50,
+                  height: 20,
                 ),
+                Padding(padding: EdgeInsets.all(25.0),child: Divider(),),
                 Padding(
                   padding: const EdgeInsets.only(left: 25.0),
                   child: Text(
@@ -202,31 +207,37 @@ class _ProfilePageState extends State<ProfilePage> {
                     _image != null
                         ? Image.file(_image!, width: 100, height: 100)
                         : SizedBox(),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        controller: _postController,
-                        decoration: InputDecoration(
-                          hintText: 'Write your post here...',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    Row(
+                    //post message
+          Padding(
+            padding: const EdgeInsets.all(25.0),
+            child: Row(
+              children: [
+//textfield
+                Expanded(
+                  child: MyTextField(
+                    controller: _postController,
+                    hintText: 'Write something here...',
+                    obscureText: false,
+                  ),
+                ),
+//post button
+                Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         IconButton(
                           onPressed: _getImage,
-                          icon: Icon(Icons.image),
+                          icon: Icon(Icons.add_a_photo_outlined),
                           color: Colors.grey,
-                        ),
-                        IconButton(
-                          onPressed: _post,
-                          icon: Icon(Icons.add),
-                          color: Colors.grey,
-                        ),
-                      ],
-                    ),
+                        ),IconButton(
+                  onPressed: _post,
+                  icon: const Icon(Icons.arrow_circle_down),
+                ),
+              ],
+            ),
+              ],
+            ),
+          ),
+                  
                     SizedBox(height: 20),
                     StreamBuilder<QuerySnapshot>(
                       stream: postsCollection
