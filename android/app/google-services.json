@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "256814003117",
+    "project_id": "projecttutorial-5557e",
+    "storage_bucket": "projecttutorial-5557e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256814003117:android:1f415666c248aa2c522724",
+        "android_client_info": {
+          "package_name": "com.example.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIzPJjOM73C0lWzyeRSc19zwxTmMMV45Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256814003117:android:83a8f4152ca0addd522724",
+        "android_client_info": {
+          "package_name": "com.fci.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIzPJjOM73C0lWzyeRSc19zwxTmMMV45Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
